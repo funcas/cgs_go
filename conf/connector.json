@@ -1,0 +1,25 @@
+{
+  "connectors": [
+    {
+      "name": "testConn",
+      "enabled": true,
+      "url": "https://www.sina.com",
+      "method": "GET",
+      "queryParams": "1",
+      "contentType": "2",
+      "userAgent": "3",
+      "timeout": 3
+    },
+    {
+      "name": "testConn2",
+      "enabled": true,
+      "url": "https://www.qq.com",
+      "method": "GET",
+      "queryParams": "2",
+      "contentType": "2",
+      "userAgent": "3",
+      "timeout": 3000,
+      "encode": "GBK"
+    }
+  ]
+}
