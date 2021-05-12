@@ -1,12 +1,15 @@
 package container
 
 import (
-	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 
+	"github.com/funcas/cgs/outlet"
+
 	"github.com/funcas/cgs/connector"
-	"github.com/funcas/cgs/model"
+
+	"github.com/valyala/fastjson"
 
 	"github.com/sarulabs/di/v2"
 )
@@ -22,25 +25,8 @@ func Build() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
-	connList := readConnectors()
-	for _, conn := range connList.Connectors {
-		err := builder.Set(conn.Name, connector.NewHttpConnector(conn))
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
-
-	//builder.Add(di.Def{
-	//	Name: "conn3",
-	//	Build: func(ctn di.Container) (interface{}, error) {
-	//		return connector.NewHttpConnector("conn3", "http://www.google.com"), nil
-	//	},
-	//	Close: func(obj interface{}) error {
-	//		fmt.Printf(">>> ===== %s is being destroied ===== <<<\n", obj.(*connector.HttpConnector).Name())
-	//		return nil
-	//	},
-	//})
+	registerConnectors(builder)
+	registerOutlets(builder)
 	app = builder.Build()
 
 }
@@ -49,17 +35,108 @@ func Destroy() {
 	app.Delete()
 }
 
-type ConnectorList struct {
-	Connectors []model.HttpConnectorVO
-}
-
-func readConnectors() *ConnectorList {
-	connList := &ConnectorList{}
-	data, err := ioutil.ReadFile("./conf/connector.json")
+func readConfig(path string, keys ...string) [][]*fastjson.Value {
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	json.Unmarshal(data, connList)
+	var p fastjson.Parser
+	v, e := p.ParseBytes(data)
+	if e != nil {
+		log.Fatal(e.Error())
+	}
+	res := make([][]*fastjson.Value, len(keys))
+	for i, key := range keys {
+		res[i] = v.GetArray(key)
+	}
+	return res
+}
 
-	return connList
+//
+//func readOutletConf()
+
+// register connector instances to di container
+func registerConnectors(builder *di.Builder) {
+	connList := readConfig("./conf/connector.json", "connectors")
+	for _, conn := range connList[0] {
+		var err error
+		t := string(conn.GetStringBytes("type"))
+		name := string(conn.GetStringBytes("name"))
+		switch connector.ConnType(t) {
+		case connector.Http:
+			err = builder.Set(name,
+				connector.NewHttpConnector(conn))
+		case connector.Socket:
+			err = errors.New("not support yet")
+		case connector.WebService:
+			err = errors.New("not support yet")
+		default:
+			err = builder.Set(name, connector.NewHttpConnector(conn))
+		}
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+	}
+}
+
+func registerOutlets(builder *di.Builder) {
+	outletSet := readConfig("./conf/outlet.json", "executors", "outlets")
+	for _, exe := range outletSet[0] {
+		t := string(exe.GetStringBytes("type"))
+		name := string(exe.GetStringBytes("name"))
+		conn := string(exe.GetStringBytes("connector"))
+		switch outlet.ExecType(t) {
+		case outlet.HttpExec:
+			builder.Add(di.Def{
+				Name: name,
+				Build: func(ctn di.Container) (interface{}, error) {
+					return outlet.NewHttpExecutor(ctn.Get(conn).(connector.Connector)), nil
+				},
+			})
+		}
+	}
+	transMap := make(TransCodeMap)
+	for _, out := range outletSet[1] {
+		acceptTransCodes := []string{}
+		name := string(out.GetStringBytes("name"))
+		exec := string(out.GetStringBytes("executor"))
+		transCodeArr := out.GetArray("acceptTransCodes")
+		for _, v := range transCodeArr {
+			transCode := string(v.GetStringBytes())
+			acceptTransCodes = append(acceptTransCodes, transCode)
+			transMap[transCode] = name
+		}
+		builder.Add(di.Def{
+			Name: name,
+			Build: func(ctn di.Container) (interface{}, error) {
+				return outlet.NewOutlet(name, ctn.Get(exec).(outlet.Executor), acceptTransCodes), nil
+			},
+		})
+	}
+	if len(transMap) > 0 {
+		builder.Set(OUTLET_NAME, transMap)
+	}
+
+}
+
+const OUTLET_NAME = "outlets"
+
+type TransCodeMap map[string]string
+
+func (t TransCodeMap) Exists(transCode string) bool {
+	_, exists := t[transCode]
+	return exists
+}
+
+func (t TransCodeMap) GetOutlet(transCode string) (*outlet.Outlet, error) {
+	if !t.Exists(transCode) {
+		return nil, errors.New("invalid transCode")
+	}
+
+	res, err := app.SafeGet(t[transCode])
+	if err != nil {
+		return nil, err
+	}
+	return res.(*outlet.Outlet), nil
 }

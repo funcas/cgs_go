@@ -8,7 +8,9 @@
       "queryParams": "1",
       "contentType": "2",
       "userAgent": "3",
-      "timeout": 3
+      "type": "HTTP_CONNECTOR",
+      "timeout": 3,
+      "lang": "UTF-8"
     },
     {
       "name": "testConn2",
@@ -19,7 +21,8 @@
       "contentType": "2",
       "userAgent": "3",
       "timeout": 3000,
-      "encode": "GBK"
+      "type": "HTTP_CONNECTOR",
+      "lang": "GBK"
     }
   ]
 }

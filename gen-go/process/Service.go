@@ -28,11 +28,13 @@ func CudDataPtr(v CudData) *CudData { return &v }
 // Attributes:
 //  - TransCode
 //  - Data
+//  - UniData
 //  - CudData
 type Resp struct {
-	TransCode string  `thrift:"transCode,1" db:"transCode" json:"transCode"`
-	Data      Data    `thrift:"data,2" db:"data" json:"data"`
-	CudData   CudData `thrift:"cudData,3" db:"cudData" json:"cudData"`
+	TransCode string             `thrift:"transCode,1" db:"transCode" json:"transCode"`
+	Data      string             `thrift:"data,2" db:"data" json:"data"`
+	UniData   Data               `thrift:"uniData,3" db:"uniData" json:"uniData"`
+	CudData   map[string]CudData `thrift:"cudData,4" db:"cudData" json:"cudData"`
 }
 
 func NewResp() *Resp {
@@ -43,11 +45,15 @@ func (p *Resp) GetTransCode() string {
 	return p.TransCode
 }
 
-func (p *Resp) GetData() Data {
+func (p *Resp) GetData() string {
 	return p.Data
 }
 
-func (p *Resp) GetCudData() CudData {
+func (p *Resp) GetUniData() Data {
+	return p.UniData
+}
+
+func (p *Resp) GetCudData() map[string]CudData {
 	return p.CudData
 }
 func (p *Resp) Read(ctx context.Context, iprot thrift.TProtocol) error {
@@ -75,7 +81,7 @@ func (p *Resp) Read(ctx context.Context, iprot thrift.TProtocol) error {
 				}
 			}
 		case 2:
-			if fieldTypeId == thrift.MAP {
+			if fieldTypeId == thrift.STRING {
 				if err := p.ReadField2(ctx, iprot); err != nil {
 					return err
 				}
@@ -85,8 +91,18 @@ func (p *Resp) Read(ctx context.Context, iprot thrift.TProtocol) error {
 				}
 			}
 		case 3:
-			if fieldTypeId == thrift.LIST {
+			if fieldTypeId == thrift.MAP {
 				if err := p.ReadField3(ctx, iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 4:
+			if fieldTypeId == thrift.MAP {
+				if err := p.ReadField4(ctx, iprot); err != nil {
 					return err
 				}
 			} else {
@@ -119,12 +135,21 @@ func (p *Resp) ReadField1(ctx context.Context, iprot thrift.TProtocol) error {
 }
 
 func (p *Resp) ReadField2(ctx context.Context, iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(ctx); err != nil {
+		return thrift.PrependError("error reading field 2: ", err)
+	} else {
+		p.Data = v
+	}
+	return nil
+}
+
+func (p *Resp) ReadField3(ctx context.Context, iprot thrift.TProtocol) error {
 	_, _, size, err := iprot.ReadMapBegin(ctx)
 	if err != nil {
 		return thrift.PrependError("error reading map begin: ", err)
 	}
 	tMap := make(Data, size)
-	p.Data = tMap
+	p.UniData = tMap
 	for i := 0; i < size; i++ {
 		var _key0 string
 		if v, err := iprot.ReadString(ctx); err != nil {
@@ -138,7 +163,7 @@ func (p *Resp) ReadField2(ctx context.Context, iprot thrift.TProtocol) error {
 		} else {
 			_val1 = v
 		}
-		p.Data[_key0] = _val1
+		p.UniData[_key0] = _val1
 	}
 	if err := iprot.ReadMapEnd(ctx); err != nil {
 		return thrift.PrependError("error reading map end: ", err)
@@ -146,42 +171,60 @@ func (p *Resp) ReadField2(ctx context.Context, iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *Resp) ReadField3(ctx context.Context, iprot thrift.TProtocol) error {
-	_, size, err := iprot.ReadListBegin(ctx)
+func (p *Resp) ReadField4(ctx context.Context, iprot thrift.TProtocol) error {
+	_, _, size, err := iprot.ReadMapBegin(ctx)
 	if err != nil {
-		return thrift.PrependError("error reading list begin: ", err)
+		return thrift.PrependError("error reading map begin: ", err)
 	}
-	tSlice := make(CudData, 0, size)
-	p.CudData = tSlice
+	tMap := make(map[string]CudData, size)
+	p.CudData = tMap
 	for i := 0; i < size; i++ {
-		_, _, size, err := iprot.ReadMapBegin(ctx)
+		var _key2 string
+		if v, err := iprot.ReadString(ctx); err != nil {
+			return thrift.PrependError("error reading field 0: ", err)
+		} else {
+			_key2 = v
+		}
+		_, size, err := iprot.ReadListBegin(ctx)
 		if err != nil {
-			return thrift.PrependError("error reading map begin: ", err)
+			return thrift.PrependError("error reading list begin: ", err)
 		}
-		tMap := make(Data, size)
-		_elem2 := tMap
+		tSlice := make(CudData, 0, size)
+		_val3 := tSlice
 		for i := 0; i < size; i++ {
-			var _key3 string
-			if v, err := iprot.ReadString(ctx); err != nil {
-				return thrift.PrependError("error reading field 0: ", err)
-			} else {
-				_key3 = v
+			_, _, size, err := iprot.ReadMapBegin(ctx)
+			if err != nil {
+				return thrift.PrependError("error reading map begin: ", err)
 			}
-			var _val4 string
-			if v, err := iprot.ReadString(ctx); err != nil {
-				return thrift.PrependError("error reading field 0: ", err)
-			} else {
-				_val4 = v
+			tMap := make(Data, size)
+			_elem4 := tMap
+			for i := 0; i < size; i++ {
+				var _key5 string
+				if v, err := iprot.ReadString(ctx); err != nil {
+					return thrift.PrependError("error reading field 0: ", err)
+				} else {
+					_key5 = v
+				}
+				var _val6 string
+				if v, err := iprot.ReadString(ctx); err != nil {
+					return thrift.PrependError("error reading field 0: ", err)
+				} else {
+					_val6 = v
+				}
+				_elem4[_key5] = _val6
 			}
-			_elem2[_key3] = _val4
+			if err := iprot.ReadMapEnd(ctx); err != nil {
+				return thrift.PrependError("error reading map end: ", err)
+			}
+			_val3 = append(_val3, _elem4)
 		}
-		if err := iprot.ReadMapEnd(ctx); err != nil {
-			return thrift.PrependError("error reading map end: ", err)
+		if err := iprot.ReadListEnd(ctx); err != nil {
+			return thrift.PrependError("error reading list end: ", err)
 		}
-		p.CudData = append(p.CudData, _elem2)
+		p.CudData[_key2] = _val3
 	}
-	if err := iprot.ReadListEnd(ctx); err != nil {
-		return thrift.PrependError("error reading list end: ", err)
+	if err := iprot.ReadMapEnd(ctx); err != nil {
+		return thrift.PrependError("error reading map end: ", err)
 	}
 	return nil
 }
@@ -198,6 +241,9 @@ func (p *Resp) Write(ctx context.Context, oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField3(ctx, oprot); err != nil {
+			return err
+		}
+		if err := p.writeField4(ctx, oprot); err != nil {
 			return err
 		}
 	}
@@ -224,13 +270,26 @@ func (p *Resp) writeField1(ctx context.Context, oprot thrift.TProtocol) (err err
 }
 
 func (p *Resp) writeField2(ctx context.Context, oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin(ctx, "data", thrift.MAP, 2); err != nil {
+	if err := oprot.WriteFieldBegin(ctx, "data", thrift.STRING, 2); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field begin error 2:data: ", p), err)
 	}
-	if err := oprot.WriteMapBegin(ctx, thrift.STRING, thrift.STRING, len(p.Data)); err != nil {
+	if err := oprot.WriteString(ctx, string(p.Data)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.data (2) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(ctx); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:data: ", p), err)
+	}
+	return err
+}
+
+func (p *Resp) writeField3(ctx context.Context, oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin(ctx, "uniData", thrift.MAP, 3); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:uniData: ", p), err)
+	}
+	if err := oprot.WriteMapBegin(ctx, thrift.STRING, thrift.STRING, len(p.UniData)); err != nil {
 		return thrift.PrependError("error writing map begin: ", err)
 	}
-	for k, v := range p.Data {
+	for k, v := range p.UniData {
 		if err := oprot.WriteString(ctx, string(k)); err != nil {
 			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
 		}
@@ -242,39 +301,50 @@ func (p *Resp) writeField2(ctx context.Context, oprot thrift.TProtocol) (err err
 		return thrift.PrependError("error writing map end: ", err)
 	}
 	if err := oprot.WriteFieldEnd(ctx); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 2:data: ", p), err)
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:uniData: ", p), err)
 	}
 	return err
 }
 
-func (p *Resp) writeField3(ctx context.Context, oprot thrift.TProtocol) (err error) {
-	if err := oprot.WriteFieldBegin(ctx, "cudData", thrift.LIST, 3); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field begin error 3:cudData: ", p), err)
+func (p *Resp) writeField4(ctx context.Context, oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin(ctx, "cudData", thrift.MAP, 4); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:cudData: ", p), err)
 	}
-	if err := oprot.WriteListBegin(ctx, thrift.MAP, len(p.CudData)); err != nil {
-		return thrift.PrependError("error writing list begin: ", err)
+	if err := oprot.WriteMapBegin(ctx, thrift.STRING, thrift.LIST, len(p.CudData)); err != nil {
+		return thrift.PrependError("error writing map begin: ", err)
 	}
-	for _, v := range p.CudData {
-		if err := oprot.WriteMapBegin(ctx, thrift.STRING, thrift.STRING, len(v)); err != nil {
-			return thrift.PrependError("error writing map begin: ", err)
+	for k, v := range p.CudData {
+		if err := oprot.WriteString(ctx, string(k)); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
 		}
-		for k, v := range v {
-			if err := oprot.WriteString(ctx, string(k)); err != nil {
-				return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+		if err := oprot.WriteListBegin(ctx, thrift.MAP, len(v)); err != nil {
+			return thrift.PrependError("error writing list begin: ", err)
+		}
+		for _, v := range v {
+			if err := oprot.WriteMapBegin(ctx, thrift.STRING, thrift.STRING, len(v)); err != nil {
+				return thrift.PrependError("error writing map begin: ", err)
 			}
-			if err := oprot.WriteString(ctx, string(v)); err != nil {
-				return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+			for k, v := range v {
+				if err := oprot.WriteString(ctx, string(k)); err != nil {
+					return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+				}
+				if err := oprot.WriteString(ctx, string(v)); err != nil {
+					return thrift.PrependError(fmt.Sprintf("%T. (0) field write error: ", p), err)
+				}
+			}
+			if err := oprot.WriteMapEnd(ctx); err != nil {
+				return thrift.PrependError("error writing map end: ", err)
 			}
 		}
-		if err := oprot.WriteMapEnd(ctx); err != nil {
-			return thrift.PrependError("error writing map end: ", err)
+		if err := oprot.WriteListEnd(ctx); err != nil {
+			return thrift.PrependError("error writing list end: ", err)
 		}
 	}
-	if err := oprot.WriteListEnd(ctx); err != nil {
-		return thrift.PrependError("error writing list end: ", err)
+	if err := oprot.WriteMapEnd(ctx); err != nil {
+		return thrift.PrependError("error writing map end: ", err)
 	}
 	if err := oprot.WriteFieldEnd(ctx); err != nil {
-		return thrift.PrependError(fmt.Sprintf("%T write field end error 3:cudData: ", p), err)
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 4:cudData: ", p), err)
 	}
 	return err
 }
@@ -288,27 +358,36 @@ func (p *Resp) Equals(other *Resp) bool {
 	if p.TransCode != other.TransCode {
 		return false
 	}
-	if len(p.Data) != len(other.Data) {
+	if p.Data != other.Data {
 		return false
 	}
-	for k, _tgt := range p.Data {
-		_src5 := other.Data[k]
-		if _tgt != _src5 {
+	if len(p.UniData) != len(other.UniData) {
+		return false
+	}
+	for k, _tgt := range p.UniData {
+		_src7 := other.UniData[k]
+		if _tgt != _src7 {
 			return false
 		}
 	}
 	if len(p.CudData) != len(other.CudData) {
 		return false
 	}
-	for i, _tgt := range p.CudData {
-		_src6 := other.CudData[i]
-		if len(_tgt) != len(_src6) {
+	for k, _tgt := range p.CudData {
+		_src8 := other.CudData[k]
+		if len(_tgt) != len(_src8) {
 			return false
 		}
-		for k, _tgt := range _tgt {
-			_src7 := _src6[k]
-			if _tgt != _src7 {
+		for i, _tgt := range _tgt {
+			_src9 := _src8[i]
+			if len(_tgt) != len(_src9) {
 				return false
+			}
+			for k, _tgt := range _tgt {
+				_src10 := _src9[k]
+				if _tgt != _src10 {
+					return false
+				}
 			}
 		}
 	}
@@ -329,7 +408,8 @@ type EntryService interface {
 	// Parameters:
 	//  - TransCode
 	//  - Params
-	ExecuteWithParams(ctx context.Context, transCode string, params Data) (_r *Resp, _err error)
+	ExecuteWithParams(ctx context.Context, transCode string, params map[string]string) (_r *Resp, _err error)
+	Reload(ctx context.Context) (_r *Resp, _err error)
 }
 
 type EntryServiceClient struct {
@@ -370,33 +450,45 @@ func (p *EntryServiceClient) SetLastResponseMeta_(meta thrift.ResponseMeta) {
 // Parameters:
 //  - TransCode
 func (p *EntryServiceClient) Execute(ctx context.Context, transCode string) (_r *Resp, _err error) {
-	var _args8 EntryServiceExecuteArgs
-	_args8.TransCode = transCode
-	var _result10 EntryServiceExecuteResult
-	var _meta9 thrift.ResponseMeta
-	_meta9, _err = p.Client_().Call(ctx, "Execute", &_args8, &_result10)
-	p.SetLastResponseMeta_(_meta9)
-	if _err != nil {
-		return
-	}
-	return _result10.GetSuccess(), nil
-}
-
-// Parameters:
-//  - TransCode
-//  - Params
-func (p *EntryServiceClient) ExecuteWithParams(ctx context.Context, transCode string, params Data) (_r *Resp, _err error) {
-	var _args11 EntryServiceExecuteWithParamsArgs
+	var _args11 EntryServiceExecuteArgs
 	_args11.TransCode = transCode
-	_args11.Params = params
-	var _result13 EntryServiceExecuteWithParamsResult
+	var _result13 EntryServiceExecuteResult
 	var _meta12 thrift.ResponseMeta
-	_meta12, _err = p.Client_().Call(ctx, "ExecuteWithParams", &_args11, &_result13)
+	_meta12, _err = p.Client_().Call(ctx, "execute", &_args11, &_result13)
 	p.SetLastResponseMeta_(_meta12)
 	if _err != nil {
 		return
 	}
 	return _result13.GetSuccess(), nil
+}
+
+// Parameters:
+//  - TransCode
+//  - Params
+func (p *EntryServiceClient) ExecuteWithParams(ctx context.Context, transCode string, params map[string]string) (_r *Resp, _err error) {
+	var _args14 EntryServiceExecuteWithParamsArgs
+	_args14.TransCode = transCode
+	_args14.Params = params
+	var _result16 EntryServiceExecuteWithParamsResult
+	var _meta15 thrift.ResponseMeta
+	_meta15, _err = p.Client_().Call(ctx, "executeWithParams", &_args14, &_result16)
+	p.SetLastResponseMeta_(_meta15)
+	if _err != nil {
+		return
+	}
+	return _result16.GetSuccess(), nil
+}
+
+func (p *EntryServiceClient) Reload(ctx context.Context) (_r *Resp, _err error) {
+	var _args17 EntryServiceReloadArgs
+	var _result19 EntryServiceReloadResult
+	var _meta18 thrift.ResponseMeta
+	_meta18, _err = p.Client_().Call(ctx, "reload", &_args17, &_result19)
+	p.SetLastResponseMeta_(_meta18)
+	if _err != nil {
+		return
+	}
+	return _result19.GetSuccess(), nil
 }
 
 type EntryServiceProcessor struct {
@@ -419,10 +511,11 @@ func (p *EntryServiceProcessor) ProcessorMap() map[string]thrift.TProcessorFunct
 
 func NewEntryServiceProcessor(handler EntryService) *EntryServiceProcessor {
 
-	self14 := &EntryServiceProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self14.processorMap["Execute"] = &entryServiceProcessorExecute{handler: handler}
-	self14.processorMap["ExecuteWithParams"] = &entryServiceProcessorExecuteWithParams{handler: handler}
-	return self14
+	self20 := &EntryServiceProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self20.processorMap["execute"] = &entryServiceProcessorExecute{handler: handler}
+	self20.processorMap["executeWithParams"] = &entryServiceProcessorExecuteWithParams{handler: handler}
+	self20.processorMap["reload"] = &entryServiceProcessorReload{handler: handler}
+	return self20
 }
 
 func (p *EntryServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -435,12 +528,12 @@ func (p *EntryServiceProcessor) Process(ctx context.Context, iprot, oprot thrift
 	}
 	iprot.Skip(ctx, thrift.STRUCT)
 	iprot.ReadMessageEnd(ctx)
-	x15 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
+	x21 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function "+name)
 	oprot.WriteMessageBegin(ctx, name, thrift.EXCEPTION, seqId)
-	x15.Write(ctx, oprot)
+	x21.Write(ctx, oprot)
 	oprot.WriteMessageEnd(ctx)
 	oprot.Flush(ctx)
-	return false, x15
+	return false, x21
 
 }
 
@@ -454,7 +547,7 @@ func (p *entryServiceProcessorExecute) Process(ctx context.Context, seqId int32,
 	if err2 = args.Read(ctx, iprot); err2 != nil {
 		iprot.ReadMessageEnd(ctx)
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err2.Error())
-		oprot.WriteMessageBegin(ctx, "Execute", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin(ctx, "execute", thrift.EXCEPTION, seqId)
 		x.Write(ctx, oprot)
 		oprot.WriteMessageEnd(ctx)
 		oprot.Flush(ctx)
@@ -495,8 +588,8 @@ func (p *entryServiceProcessorExecute) Process(ctx context.Context, seqId int32,
 		if err2 == thrift.ErrAbandonRequest {
 			return false, thrift.WrapTException(err2)
 		}
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing Execute: "+err2.Error())
-		oprot.WriteMessageBegin(ctx, "Execute", thrift.EXCEPTION, seqId)
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing execute: "+err2.Error())
+		oprot.WriteMessageBegin(ctx, "execute", thrift.EXCEPTION, seqId)
 		x.Write(ctx, oprot)
 		oprot.WriteMessageEnd(ctx)
 		oprot.Flush(ctx)
@@ -505,7 +598,7 @@ func (p *entryServiceProcessorExecute) Process(ctx context.Context, seqId int32,
 		result.Success = retval
 	}
 	tickerCancel()
-	if err2 = oprot.WriteMessageBegin(ctx, "Execute", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin(ctx, "execute", thrift.REPLY, seqId); err2 != nil {
 		err = thrift.WrapTException(err2)
 	}
 	if err2 = result.Write(ctx, oprot); err == nil && err2 != nil {
@@ -533,7 +626,7 @@ func (p *entryServiceProcessorExecuteWithParams) Process(ctx context.Context, se
 	if err2 = args.Read(ctx, iprot); err2 != nil {
 		iprot.ReadMessageEnd(ctx)
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err2.Error())
-		oprot.WriteMessageBegin(ctx, "ExecuteWithParams", thrift.EXCEPTION, seqId)
+		oprot.WriteMessageBegin(ctx, "executeWithParams", thrift.EXCEPTION, seqId)
 		x.Write(ctx, oprot)
 		oprot.WriteMessageEnd(ctx)
 		oprot.Flush(ctx)
@@ -574,8 +667,8 @@ func (p *entryServiceProcessorExecuteWithParams) Process(ctx context.Context, se
 		if err2 == thrift.ErrAbandonRequest {
 			return false, thrift.WrapTException(err2)
 		}
-		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing ExecuteWithParams: "+err2.Error())
-		oprot.WriteMessageBegin(ctx, "ExecuteWithParams", thrift.EXCEPTION, seqId)
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing executeWithParams: "+err2.Error())
+		oprot.WriteMessageBegin(ctx, "executeWithParams", thrift.EXCEPTION, seqId)
 		x.Write(ctx, oprot)
 		oprot.WriteMessageEnd(ctx)
 		oprot.Flush(ctx)
@@ -584,7 +677,86 @@ func (p *entryServiceProcessorExecuteWithParams) Process(ctx context.Context, se
 		result.Success = retval
 	}
 	tickerCancel()
-	if err2 = oprot.WriteMessageBegin(ctx, "ExecuteWithParams", thrift.REPLY, seqId); err2 != nil {
+	if err2 = oprot.WriteMessageBegin(ctx, "executeWithParams", thrift.REPLY, seqId); err2 != nil {
+		err = thrift.WrapTException(err2)
+	}
+	if err2 = result.Write(ctx, oprot); err == nil && err2 != nil {
+		err = thrift.WrapTException(err2)
+	}
+	if err2 = oprot.WriteMessageEnd(ctx); err == nil && err2 != nil {
+		err = thrift.WrapTException(err2)
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = thrift.WrapTException(err2)
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type entryServiceProcessorReload struct {
+	handler EntryService
+}
+
+func (p *entryServiceProcessorReload) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := EntryServiceReloadArgs{}
+	var err2 error
+	if err2 = args.Read(ctx, iprot); err2 != nil {
+		iprot.ReadMessageEnd(ctx)
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err2.Error())
+		oprot.WriteMessageBegin(ctx, "reload", thrift.EXCEPTION, seqId)
+		x.Write(ctx, oprot)
+		oprot.WriteMessageEnd(ctx)
+		oprot.Flush(ctx)
+		return false, thrift.WrapTException(err2)
+	}
+	iprot.ReadMessageEnd(ctx)
+
+	tickerCancel := func() {}
+	// Start a goroutine to do server side connectivity check.
+	if thrift.ServerConnectivityCheckInterval > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
+		var tickerCtx context.Context
+		tickerCtx, tickerCancel = context.WithCancel(context.Background())
+		defer tickerCancel()
+		go func(ctx context.Context, cancel context.CancelFunc) {
+			ticker := time.NewTicker(thrift.ServerConnectivityCheckInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					if !iprot.Transport().IsOpen() {
+						cancel()
+						return
+					}
+				}
+			}
+		}(tickerCtx, cancel)
+	}
+
+	result := EntryServiceReloadResult{}
+	var retval *Resp
+	if retval, err2 = p.handler.Reload(ctx); err2 != nil {
+		tickerCancel()
+		if err2 == thrift.ErrAbandonRequest {
+			return false, thrift.WrapTException(err2)
+		}
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing reload: "+err2.Error())
+		oprot.WriteMessageBegin(ctx, "reload", thrift.EXCEPTION, seqId)
+		x.Write(ctx, oprot)
+		oprot.WriteMessageEnd(ctx)
+		oprot.Flush(ctx)
+		return true, thrift.WrapTException(err2)
+	} else {
+		result.Success = retval
+	}
+	tickerCancel()
+	if err2 = oprot.WriteMessageBegin(ctx, "reload", thrift.REPLY, seqId); err2 != nil {
 		err = thrift.WrapTException(err2)
 	}
 	if err2 = result.Write(ctx, oprot); err == nil && err2 != nil {
@@ -666,7 +838,7 @@ func (p *EntryServiceExecuteArgs) ReadField1(ctx context.Context, iprot thrift.T
 }
 
 func (p *EntryServiceExecuteArgs) Write(ctx context.Context, oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin(ctx, "Execute_args"); err != nil {
+	if err := oprot.WriteStructBegin(ctx, "execute_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if p != nil {
@@ -773,7 +945,7 @@ func (p *EntryServiceExecuteResult) ReadField0(ctx context.Context, iprot thrift
 }
 
 func (p *EntryServiceExecuteResult) Write(ctx context.Context, oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin(ctx, "Execute_result"); err != nil {
+	if err := oprot.WriteStructBegin(ctx, "execute_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if p != nil {
@@ -816,8 +988,8 @@ func (p *EntryServiceExecuteResult) String() string {
 //  - TransCode
 //  - Params
 type EntryServiceExecuteWithParamsArgs struct {
-	TransCode string `thrift:"transCode,1" db:"transCode" json:"transCode"`
-	Params    Data   `thrift:"params,2" db:"params" json:"params"`
+	TransCode string            `thrift:"transCode,1" db:"transCode" json:"transCode"`
+	Params    map[string]string `thrift:"params,2" db:"params" json:"params"`
 }
 
 func NewEntryServiceExecuteWithParamsArgs() *EntryServiceExecuteWithParamsArgs {
@@ -828,7 +1000,7 @@ func (p *EntryServiceExecuteWithParamsArgs) GetTransCode() string {
 	return p.TransCode
 }
 
-func (p *EntryServiceExecuteWithParamsArgs) GetParams() Data {
+func (p *EntryServiceExecuteWithParamsArgs) GetParams() map[string]string {
 	return p.Params
 }
 func (p *EntryServiceExecuteWithParamsArgs) Read(ctx context.Context, iprot thrift.TProtocol) error {
@@ -894,22 +1066,22 @@ func (p *EntryServiceExecuteWithParamsArgs) ReadField2(ctx context.Context, ipro
 	if err != nil {
 		return thrift.PrependError("error reading map begin: ", err)
 	}
-	tMap := make(Data, size)
+	tMap := make(map[string]string, size)
 	p.Params = tMap
 	for i := 0; i < size; i++ {
-		var _key16 string
+		var _key22 string
 		if v, err := iprot.ReadString(ctx); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_key16 = v
+			_key22 = v
 		}
-		var _val17 string
+		var _val23 string
 		if v, err := iprot.ReadString(ctx); err != nil {
 			return thrift.PrependError("error reading field 0: ", err)
 		} else {
-			_val17 = v
+			_val23 = v
 		}
-		p.Params[_key16] = _val17
+		p.Params[_key22] = _val23
 	}
 	if err := iprot.ReadMapEnd(ctx); err != nil {
 		return thrift.PrependError("error reading map end: ", err)
@@ -918,7 +1090,7 @@ func (p *EntryServiceExecuteWithParamsArgs) ReadField2(ctx context.Context, ipro
 }
 
 func (p *EntryServiceExecuteWithParamsArgs) Write(ctx context.Context, oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin(ctx, "ExecuteWithParams_args"); err != nil {
+	if err := oprot.WriteStructBegin(ctx, "executeWithParams_args"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if p != nil {
@@ -1052,7 +1224,7 @@ func (p *EntryServiceExecuteWithParamsResult) ReadField0(ctx context.Context, ip
 }
 
 func (p *EntryServiceExecuteWithParamsResult) Write(ctx context.Context, oprot thrift.TProtocol) error {
-	if err := oprot.WriteStructBegin(ctx, "ExecuteWithParams_result"); err != nil {
+	if err := oprot.WriteStructBegin(ctx, "executeWithParams_result"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
 	}
 	if p != nil {
@@ -1089,4 +1261,168 @@ func (p *EntryServiceExecuteWithParamsResult) String() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf("EntryServiceExecuteWithParamsResult(%+v)", *p)
+}
+
+type EntryServiceReloadArgs struct {
+}
+
+func NewEntryServiceReloadArgs() *EntryServiceReloadArgs {
+	return &EntryServiceReloadArgs{}
+}
+
+func (p *EntryServiceReloadArgs) Read(ctx context.Context, iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(ctx); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin(ctx)
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+			return err
+		}
+		if err := iprot.ReadFieldEnd(ctx); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(ctx); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *EntryServiceReloadArgs) Write(ctx context.Context, oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin(ctx, "reload_args"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if p != nil {
+	}
+	if err := oprot.WriteFieldStop(ctx); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(ctx); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *EntryServiceReloadArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("EntryServiceReloadArgs(%+v)", *p)
+}
+
+// Attributes:
+//  - Success
+type EntryServiceReloadResult struct {
+	Success *Resp `thrift:"success,0" db:"success" json:"success,omitempty"`
+}
+
+func NewEntryServiceReloadResult() *EntryServiceReloadResult {
+	return &EntryServiceReloadResult{}
+}
+
+var EntryServiceReloadResult_Success_DEFAULT *Resp
+
+func (p *EntryServiceReloadResult) GetSuccess() *Resp {
+	if !p.IsSetSuccess() {
+		return EntryServiceReloadResult_Success_DEFAULT
+	}
+	return p.Success
+}
+func (p *EntryServiceReloadResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *EntryServiceReloadResult) Read(ctx context.Context, iprot thrift.TProtocol) error {
+	if _, err := iprot.ReadStructBegin(ctx); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err := iprot.ReadFieldBegin(ctx)
+		if err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err := p.ReadField0(ctx, iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+					return err
+				}
+			}
+		default:
+			if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+				return err
+			}
+		}
+		if err := iprot.ReadFieldEnd(ctx); err != nil {
+			return err
+		}
+	}
+	if err := iprot.ReadStructEnd(ctx); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+	}
+	return nil
+}
+
+func (p *EntryServiceReloadResult) ReadField0(ctx context.Context, iprot thrift.TProtocol) error {
+	p.Success = &Resp{}
+	if err := p.Success.Read(ctx, iprot); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Success), err)
+	}
+	return nil
+}
+
+func (p *EntryServiceReloadResult) Write(ctx context.Context, oprot thrift.TProtocol) error {
+	if err := oprot.WriteStructBegin(ctx, "reload_result"); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+	}
+	if p != nil {
+		if err := p.writeField0(ctx, oprot); err != nil {
+			return err
+		}
+	}
+	if err := oprot.WriteFieldStop(ctx); err != nil {
+		return thrift.PrependError("write field stop error: ", err)
+	}
+	if err := oprot.WriteStructEnd(ctx); err != nil {
+		return thrift.PrependError("write struct stop error: ", err)
+	}
+	return nil
+}
+
+func (p *EntryServiceReloadResult) writeField0(ctx context.Context, oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err := oprot.WriteFieldBegin(ctx, "success", thrift.STRUCT, 0); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field begin error 0:success: ", p), err)
+		}
+		if err := p.Success.Write(ctx, oprot); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Success), err)
+		}
+		if err := oprot.WriteFieldEnd(ctx); err != nil {
+			return thrift.PrependError(fmt.Sprintf("%T write field end error 0:success: ", p), err)
+		}
+	}
+	return err
+}
+
+func (p *EntryServiceReloadResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("EntryServiceReloadResult(%+v)", *p)
 }

@@ -1,0 +1,36 @@
+{
+  "executors": [
+    {
+      "name": "demoExecutor",
+      "connector": "testConn",
+      "analysisService": "",
+      "templateService": "",
+      "type": "HTTP_EXECUTOR"
+    },
+    {
+      "name": "demoExecutor2",
+      "connector": "testConn2",
+      "analysisService": "",
+      "templateService": "",
+      "type": "HTTP_EXECUTOR"
+    }
+  ],
+
+  "outlets": [
+    {
+      "name": "demoPort",
+      "executor": "demoExecutor",
+      "acceptTransCodes": [
+        "test1",
+        "test2"
+      ]
+    },
+    {
+      "name": "demoPort2",
+      "executor": "demoExecutor2",
+      "acceptTransCodes": [
+        "test3"
+      ]
+    }
+  ]
+}

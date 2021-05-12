@@ -26,3 +26,11 @@ func (c *BaseConnector) Enabled() bool {
 func (c *BaseConnector) SetEnabled(enabled bool) {
 	c.enabled = enabled
 }
+
+type ConnType string
+
+const (
+	Http       ConnType = "HTTP_CONNECTOR"
+	Socket     ConnType = "SOCKET_CONNECTOR"
+	WebService ConnType = "WEBSERVICE_CONNECTOR"
+)

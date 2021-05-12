@@ -2,33 +2,25 @@
 
 namespace go process
 
-union ObjectArg {
-  1: i32 int_arg;
-  2: i64 long_arg;
-  3: string string_arg;
-  4: bool bool_arg;
-  5: binary binary_arg;
-  6: double double_arg;
-}
-
-typedef map<string, ObjectArg> data
+typedef map<string, string> data
 typedef list<data> cudData
 
 struct Resp {
     1: string transCode;
-    2: data data;
-    3: cudData cudData;
+    2: string data;   // 无解析，返回原始报文
+    3: data uniData;  // 解析过的非数据集数据
+    4: map<string,cudData> cudData; //解析出来的数据集数据, key为关联键
 }
 
 
-//定义服务
 service EntryService {
-    Resp Execute(
-        1: string transCode
-    )
+    // 执行不带参数的交易
+    Resp execute(1: string transCode)
 
-    Resp ExecuteWithParams(
-        1: string transCode
-        2: data params
-    )
+    // 执行带参数的交易
+    Resp executeWithParams(1: string transCode, 2: map<string,string> params)
+
+    // 重载配置文件
+    Resp reload()
+
 }

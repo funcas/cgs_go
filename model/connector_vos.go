@@ -14,4 +14,10 @@ type HttpConnectorVO struct {
 	ContentType string `json:"contentType"`
 	UserAgent   string `json:"userAgent"`
 	Timeout     int    `json:"timeout"`
+	Type        int32  `json:"type"`
+	Lang        string `json:"lang"`
+}
+
+type ConnectorConf struct {
+	Connectors []HttpConnectorVO
 }

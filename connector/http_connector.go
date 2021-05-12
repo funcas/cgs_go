@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/funcas/cgs/model"
+	"github.com/valyala/fastjson"
 )
 
 var _ Connector = (*HttpConnector)(nil)
@@ -18,19 +18,36 @@ type HttpConnector struct {
 	contentType string
 	userAgent   string
 	timeout     int
+	lang        string
 }
 
-func NewHttpConnector(vo model.HttpConnectorVO) *HttpConnector {
+//func NewHttpConnector(vo model.HttpConnectorVO) *HttpConnector {
+//	return &HttpConnector{
+//		url:         vo.URL,
+//		method:      vo.Method,
+//		queryParams: vo.QueryParams,
+//		contentType: vo.ContentType,
+//		userAgent:   vo.UserAgent,
+//		timeout:     vo.Timeout,
+//		BaseConnector: BaseConnector{
+//			name:    vo.Name,
+//			enabled: vo.Enabled,
+//		},
+//	}
+//}
+
+func NewHttpConnector(vo *fastjson.Value) *HttpConnector {
 	return &HttpConnector{
-		url:         vo.URL,
-		method:      vo.Method,
-		queryParams: vo.QueryParams,
-		contentType: vo.ContentType,
-		userAgent:   vo.UserAgent,
-		timeout:     vo.Timeout,
+		url:         string(vo.GetStringBytes("url")),
+		method:      string(vo.GetStringBytes("method")),
+		queryParams: string(vo.GetStringBytes("queryParams")),
+		contentType: string(vo.GetStringBytes("contentType")),
+		userAgent:   string(vo.GetStringBytes("userAgent")),
+		timeout:     vo.GetInt("timeout"),
+		lang:        string(vo.GetStringBytes("lang")),
 		BaseConnector: BaseConnector{
-			name:    vo.Name,
-			enabled: vo.Enabled,
+			name:    string(vo.GetStringBytes("name")),
+			enabled: vo.GetBool("enabled"),
 		},
 	}
 }
@@ -61,6 +78,10 @@ func (h HttpConnector) Timeout() int {
 
 func (h HttpConnector) ContentType() string {
 	return h.contentType
+}
+
+func (h HttpConnector) Lang() string {
+	return h.lang
 }
 
 func (h HttpConnector) GetHttpClient() (client *http.Client, err error) {

@@ -22,8 +22,9 @@ func Usage() {
 	fmt.Fprintln(os.Stderr, "Usage of ", os.Args[0], " [-h host:port] [-u url] [-f[ramed]] function [arg1 [arg2...]]:")
 	flag.PrintDefaults()
 	fmt.Fprintln(os.Stderr, "\nFunctions:")
-	fmt.Fprintln(os.Stderr, "  Resp Execute(string transCode)")
-	fmt.Fprintln(os.Stderr, "  Resp ExecuteWithParams(string transCode, data params)")
+	fmt.Fprintln(os.Stderr, "  Resp execute(string transCode)")
+	fmt.Fprintln(os.Stderr, "  Resp executeWithParams(string transCode,  params)")
+	fmt.Fprintln(os.Stderr, "  Resp reload()")
 	fmt.Fprintln(os.Stderr)
 	os.Exit(0)
 }
@@ -145,7 +146,7 @@ func main() {
 	}
 
 	switch cmd {
-	case "Execute":
+	case "execute":
 		if flag.NArg()-1 != 1 {
 			fmt.Fprintln(os.Stderr, "Execute requires 1 args")
 			flag.Usage()
@@ -155,32 +156,40 @@ func main() {
 		fmt.Print(client.Execute(context.Background(), value0))
 		fmt.Print("\n")
 		break
-	case "ExecuteWithParams":
+	case "executeWithParams":
 		if flag.NArg()-1 != 2 {
 			fmt.Fprintln(os.Stderr, "ExecuteWithParams requires 2 args")
 			flag.Usage()
 		}
 		argvalue0 := flag.Arg(1)
 		value0 := argvalue0
-		arg20 := flag.Arg(2)
-		mbTrans21 := thrift.NewTMemoryBufferLen(len(arg20))
-		defer mbTrans21.Close()
-		_, err22 := mbTrans21.WriteString(arg20)
-		if err22 != nil {
+		arg26 := flag.Arg(2)
+		mbTrans27 := thrift.NewTMemoryBufferLen(len(arg26))
+		defer mbTrans27.Close()
+		_, err28 := mbTrans27.WriteString(arg26)
+		if err28 != nil {
 			Usage()
 			return
 		}
-		factory23 := thrift.NewTJSONProtocolFactory()
-		jsProt24 := factory23.GetProtocol(mbTrans21)
+		factory29 := thrift.NewTJSONProtocolFactory()
+		jsProt30 := factory29.GetProtocol(mbTrans27)
 		containerStruct1 := process.NewEntryServiceExecuteWithParamsArgs()
-		err25 := containerStruct1.ReadField2(context.Background(), jsProt24)
-		if err25 != nil {
+		err31 := containerStruct1.ReadField2(context.Background(), jsProt30)
+		if err31 != nil {
 			Usage()
 			return
 		}
 		argvalue1 := containerStruct1.Params
-		value1 := process.Data(argvalue1)
+		value1 := argvalue1
 		fmt.Print(client.ExecuteWithParams(context.Background(), value0, value1))
+		fmt.Print("\n")
+		break
+	case "reload":
+		if flag.NArg()-1 != 0 {
+			fmt.Fprintln(os.Stderr, "Reload requires 0 args")
+			flag.Usage()
+		}
+		fmt.Print(client.Reload(context.Background()))
 		fmt.Print("\n")
 		break
 	case "":
