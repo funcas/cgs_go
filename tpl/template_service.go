@@ -35,7 +35,7 @@ func (t DefaultTemplateService) GetTemplateWithParams(transCode string, params m
 	}
 	out, err := tpl.Execute(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	return out
 }

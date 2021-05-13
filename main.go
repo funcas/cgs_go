@@ -6,6 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"gopkg.in/ini.v1"
+
+	"github.com/funcas/cgs/manager"
 
 	"github.com/funcas/cgs/gen-go/process"
 	"github.com/funcas/cgs/handler"
@@ -16,11 +21,21 @@ import (
 )
 
 func main() {
+	cfg, _ := ini.Load("./conf/cgs.ini")
+	section := cfg.Section("cgs")
+	addr := section.Key("server").String() + ":" + section.Key("listen").String()
 
+	secure, _ := section.Key("secure").Bool()
 	container.Build()
 
 	go func() {
-		runServer(thrift.NewTTransportFactory(), thrift.NewTBinaryProtocolFactoryDefault(), "127.0.0.1:6060", false)
+		conf := &thrift.TConfiguration{
+			ConnectTimeout: time.Duration(5000) * time.Millisecond,
+			SocketTimeout:  time.Duration(10000) * time.Millisecond,
+		}
+		runServer(thrift.NewTTransportFactory(),
+			thrift.NewTBinaryProtocolFactoryConf(conf),
+			addr, secure)
 	}()
 
 	// Wait for interrupt signal to gracefully shutdown the server with
@@ -38,7 +53,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	container.Destroy()
+	manager.Destroy()
 	log.Println("Server exited. ")
 
 }

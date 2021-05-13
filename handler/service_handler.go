@@ -5,6 +5,10 @@ import (
 	"errors"
 	"log"
 
+	"github.com/funcas/cgs/outlet"
+
+	"github.com/funcas/cgs/manager"
+
 	"github.com/funcas/cgs/container"
 	"github.com/funcas/cgs/gen-go/process"
 	"github.com/funcas/cgs/message"
@@ -31,25 +35,12 @@ func (h EntryServiceServiceHandler) ExecuteWithParams(ctx context.Context, trans
 		TransCode: transCode,
 		Params:    params,
 	}
-	dispatch := container.App().Get(container.DispatchName).(*container.Dispatch)
-	err := dispatch.Send(msg)
-	if err != nil {
-		_err = err
-	}
-	_r = &process.Resp{TransCode: transCode, Data: msg.OriData}
+	dispatch := manager.GetDiFactory().Get(container.DispatchName).(*outlet.Dispatch)
+	dispatch.Send(msg)
+	_r = &process.Resp{TransCode: transCode, Data: msg.OriData, ErrorMsg: msg.RetMsg}
 	return
 }
 
 func (h EntryServiceServiceHandler) Reload(ctx context.Context) (_r *process.Resp, _err error) {
 	return &process.Resp{}, nil
 }
-
-//func GetBytes(key interface{}) ([]byte, error) {
-//	var buf bytes.Buffer
-//	enc := gob.NewEncoder(&buf)
-//	err := enc.Encode(key)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return buf.Bytes(), nil
-//}

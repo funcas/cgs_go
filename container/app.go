@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/funcas/cgs/message"
+	"github.com/funcas/cgs/manager"
 
 	"github.com/funcas/cgs/tpl"
 
@@ -23,12 +23,6 @@ const (
 	DispatchName = "dispatch"
 )
 
-var app di.Container
-
-func App() di.Container {
-	return app
-}
-
 func Build() {
 	builder, err := di.NewBuilder()
 	if err != nil {
@@ -39,12 +33,8 @@ func Build() {
 	registerOutlets(builder)
 	registerDispatch(builder)
 
-	app = builder.Build()
+	manager.InitDiFactory(builder.Build())
 
-}
-
-func Destroy() {
-	app.Delete()
 }
 
 func readConfig(path string, keys ...string) [][]*fastjson.Value {
@@ -101,15 +91,18 @@ func registerOutlets(builder *di.Builder) {
 			builder.Add(di.Def{
 				Name: name,
 				Build: func(ctn di.Container) (interface{}, error) {
-					return outlet.NewHttpExecutor(ctn.Get(conn).(connector.Connector),
-						ctn.Get(tplService).(tpl.TemplateService)), nil
+					c := ctn.Get(conn).(connector.Connector)
+					if c.Enabled() {
+						return outlet.NewHttpExecutor(c, ctn.Get(tplService).(tpl.TemplateService)), nil
+					}
+					return nil, errors.New("connector is disabled")
 				},
 			})
 		}
 	}
-	transMap := make(TransCodeMap)
+	transMap := make(outlet.TransCodeMap)
 	for _, out := range outletSet[1] {
-		acceptTransCodes := []string{}
+		var acceptTransCodes []string
 		name := string(out.GetStringBytes("name"))
 		exec := string(out.GetStringBytes("executor"))
 		transCodeArr := out.GetArray("acceptTransCodes")
@@ -132,48 +125,10 @@ func registerOutlets(builder *di.Builder) {
 }
 
 func registerDispatch(builder *di.Builder) {
-	builder.Set(DispatchName, NewDispatch())
-}
-
-type TransCodeMap map[string]string
-
-func (t TransCodeMap) Exists(transCode string) bool {
-	_, exists := t[transCode]
-	return exists
-}
-
-func (t TransCodeMap) GetOutlet(transCode string) (*outlet.Outlet, error) {
-	if !t.Exists(transCode) {
-		return nil, errors.New("invalid transCode")
-	}
-
-	res, err := app.SafeGet(t[transCode])
-	if err != nil {
-		return nil, err
-	}
-	return res.(*outlet.Outlet), nil
-}
-
-type Dispatch struct {
-}
-
-func NewDispatch() *Dispatch {
-	return &Dispatch{}
-}
-
-func (d Dispatch) Send(msg *message.Message) (_err error) {
-	transCode := msg.TransCode
-	transMap, err := app.SafeGet(OutletName)
-	if err != nil {
-		_err = err
-		return
-	}
-	t := transMap.(TransCodeMap)
-	outlet, e := t.GetOutlet(transCode)
-	if e != nil {
-		_err = e
-		return
-	}
-	outlet.Executor().Execute(msg)
-	return
+	builder.Add(di.Def{
+		Name: DispatchName,
+		Build: func(ctn di.Container) (interface{}, error) {
+			return outlet.NewDispatch(ctn.Get(OutletName).(outlet.TransCodeMap)), nil
+		},
+	})
 }

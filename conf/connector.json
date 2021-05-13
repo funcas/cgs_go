@@ -14,7 +14,7 @@
     },
     {
       "name": "testConn2",
-      "enabled": true,
+      "enabled": false,
       "url": "http://127.0.0.1:8080/test",
       "method": "POST",
       "queryParams": "2",

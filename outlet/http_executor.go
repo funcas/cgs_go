@@ -39,7 +39,7 @@ func (exe HttpExecutor) Execute(msg *message.Message) {
 	conn := exe.BaseExecutor.connector.(*connector.HttpConnector)
 	client, err := conn.GetHttpClient()
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Println(err.Error())
 	}
 	var req *http.Request
 	if conn.Method() == "POST" {
@@ -57,7 +57,7 @@ func (exe HttpExecutor) Execute(msg *message.Message) {
 	resp, err := client.Do(req)
 	if err != nil {
 		msg.OriData = err.Error()
-		log.Fatal(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	if resp.StatusCode != 200 {

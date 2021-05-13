@@ -11,4 +11,5 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/valyala/fastjson v1.6.3
 	golang.org/x/text v0.3.6
+	gopkg.in/ini.v1 v1.62.0 // indirect
 )
