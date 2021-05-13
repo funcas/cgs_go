@@ -15,14 +15,14 @@
     {
       "name": "testConn2",
       "enabled": true,
-      "url": "https://www.qq.com",
-      "method": "GET",
+      "url": "http://127.0.0.1:8080/test",
+      "method": "POST",
       "queryParams": "2",
-      "contentType": "2",
+      "contentType": "application/json",
       "userAgent": "3",
       "timeout": 3000,
       "type": "HTTP_CONNECTOR",
-      "lang": "GBK"
+      "lang": "UTF-8"
     }
   ]
 }

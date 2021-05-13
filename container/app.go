@@ -5,6 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/funcas/cgs/message"
+
+	"github.com/funcas/cgs/tpl"
+
 	"github.com/funcas/cgs/outlet"
 
 	"github.com/funcas/cgs/connector"
@@ -12,6 +16,11 @@ import (
 	"github.com/valyala/fastjson"
 
 	"github.com/sarulabs/di/v2"
+)
+
+const (
+	OutletName   = "outlets"
+	DispatchName = "dispatch"
 )
 
 var app di.Container
@@ -25,8 +34,11 @@ func Build() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	builder.Set(tpl.DefaultTemplateServiceName, tpl.NewDefaultTemplateService("./conf/template"))
 	registerConnectors(builder)
 	registerOutlets(builder)
+	registerDispatch(builder)
+
 	app = builder.Build()
 
 }
@@ -51,9 +63,6 @@ func readConfig(path string, keys ...string) [][]*fastjson.Value {
 	}
 	return res
 }
-
-//
-//func readOutletConf()
 
 // register connector instances to di container
 func registerConnectors(builder *di.Builder) {
@@ -86,12 +95,14 @@ func registerOutlets(builder *di.Builder) {
 		t := string(exe.GetStringBytes("type"))
 		name := string(exe.GetStringBytes("name"))
 		conn := string(exe.GetStringBytes("connector"))
+		tplService := string(exe.GetStringBytes("templateService"))
 		switch outlet.ExecType(t) {
 		case outlet.HttpExec:
 			builder.Add(di.Def{
 				Name: name,
 				Build: func(ctn di.Container) (interface{}, error) {
-					return outlet.NewHttpExecutor(ctn.Get(conn).(connector.Connector)), nil
+					return outlet.NewHttpExecutor(ctn.Get(conn).(connector.Connector),
+						ctn.Get(tplService).(tpl.TemplateService)), nil
 				},
 			})
 		}
@@ -115,12 +126,14 @@ func registerOutlets(builder *di.Builder) {
 		})
 	}
 	if len(transMap) > 0 {
-		builder.Set(OUTLET_NAME, transMap)
+		builder.Set(OutletName, transMap)
 	}
 
 }
 
-const OUTLET_NAME = "outlets"
+func registerDispatch(builder *di.Builder) {
+	builder.Set(DispatchName, NewDispatch())
+}
 
 type TransCodeMap map[string]string
 
@@ -139,4 +152,28 @@ func (t TransCodeMap) GetOutlet(transCode string) (*outlet.Outlet, error) {
 		return nil, err
 	}
 	return res.(*outlet.Outlet), nil
+}
+
+type Dispatch struct {
+}
+
+func NewDispatch() *Dispatch {
+	return &Dispatch{}
+}
+
+func (d Dispatch) Send(msg *message.Message) (_err error) {
+	transCode := msg.TransCode
+	transMap, err := app.SafeGet(OutletName)
+	if err != nil {
+		_err = err
+		return
+	}
+	t := transMap.(TransCodeMap)
+	outlet, e := t.GetOutlet(transCode)
+	if e != nil {
+		_err = e
+		return
+	}
+	outlet.Executor().Execute(msg)
+	return
 }
