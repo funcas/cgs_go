@@ -37,7 +37,7 @@ func (h EntryServiceServiceHandler) ExecuteWithParams(ctx context.Context, trans
 	}
 	dispatch := manager.GetDiFactory().Get(container.DispatchName).(*outlet.Dispatch)
 	dispatch.Send(msg)
-	_r = &process.Resp{TransCode: transCode, Data: msg.OriData, ErrorMsg: msg.RetMsg}
+	_r = &process.Resp{TransCode: transCode, Data: msg.Data, ErrorMsg: msg.ErrMsg}
 	return
 }
 

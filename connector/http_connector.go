@@ -19,22 +19,8 @@ type HttpConnector struct {
 	userAgent   string
 	timeout     int
 	lang        string
+	header      string
 }
-
-//func NewHttpConnector(vo model.HttpConnectorVO) *HttpConnector {
-//	return &HttpConnector{
-//		url:         vo.URL,
-//		method:      vo.Method,
-//		queryParams: vo.QueryParams,
-//		contentType: vo.ContentType,
-//		userAgent:   vo.UserAgent,
-//		timeout:     vo.Timeout,
-//		BaseConnector: BaseConnector{
-//			name:    vo.Name,
-//			enabled: vo.Enabled,
-//		},
-//	}
-//}
 
 func NewHttpConnector(vo *fastjson.Value) *HttpConnector {
 	return &HttpConnector{
@@ -45,6 +31,7 @@ func NewHttpConnector(vo *fastjson.Value) *HttpConnector {
 		userAgent:   string(vo.GetStringBytes("userAgent")),
 		timeout:     vo.GetInt("timeout"),
 		lang:        string(vo.GetStringBytes("lang")),
+		header:      string(vo.GetStringBytes("header")),
 		BaseConnector: BaseConnector{
 			name:    string(vo.GetStringBytes("name")),
 			enabled: vo.GetBool("enabled"),
@@ -82,6 +69,10 @@ func (h HttpConnector) ContentType() string {
 
 func (h HttpConnector) Lang() string {
 	return h.lang
+}
+
+func (h HttpConnector) Header() string {
+	return h.header
 }
 
 func (h HttpConnector) GetHttpClient() (client *http.Client, err error) {

@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/funcas/cgs/analysis"
+
 	"github.com/funcas/cgs/manager"
 
 	"github.com/funcas/cgs/tpl"
@@ -19,8 +21,10 @@ import (
 )
 
 const (
-	OutletName   = "outlets"
-	DispatchName = "dispatch"
+	OutletName    = "outlets"
+	DispatchName  = "dispatch"
+	TemplateDir   = "./conf/template"
+	ConnectorConf = "./conf/connector.json"
 )
 
 func Build() {
@@ -28,9 +32,15 @@ func Build() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	builder.Set(tpl.DefaultTemplateServiceName, tpl.NewDefaultTemplateService("./conf/template"))
+	// register connectors to di container
 	registerConnectors(builder)
+	// register templateService to di container
+	registerTmplService(builder)
+	// register analysisService to di container
+	registerAnalysisService(builder)
+	// register outlets to di container
 	registerOutlets(builder)
+
 	registerDispatch(builder)
 
 	manager.InitDiFactory(builder.Build())
@@ -54,9 +64,13 @@ func readConfig(path string, keys ...string) [][]*fastjson.Value {
 	return res
 }
 
+func registerTmplService(builder *di.Builder) {
+	builder.Set(tpl.DefaultTemplateServiceName, tpl.NewDefaultTemplateService(TemplateDir))
+}
+
 // register connector instances to di container
 func registerConnectors(builder *di.Builder) {
-	connList := readConfig("./conf/connector.json", "connectors")
+	connList := readConfig(ConnectorConf, "connectors")
 	for _, conn := range connList[0] {
 		var err error
 		t := string(conn.GetStringBytes("type"))
@@ -79,21 +93,39 @@ func registerConnectors(builder *di.Builder) {
 	}
 }
 
+//
+func registerAnalysisService(builder *di.Builder) {
+	builder.Set(analysis.OmniAnalysisName, analysis.NewOmniAnalysis())
+	builder.Set(analysis.DefaultAnalysisName, analysis.NewDefaultAnalysis())
+}
+
 func registerOutlets(builder *di.Builder) {
 	outletSet := readConfig("./conf/outlet.json", "executors", "outlets")
 	for _, exe := range outletSet[0] {
 		t := string(exe.GetStringBytes("type"))
 		name := string(exe.GetStringBytes("name"))
 		conn := string(exe.GetStringBytes("connector"))
+		analy := string(exe.GetStringBytes("analysisService"))
 		tplService := string(exe.GetStringBytes("templateService"))
 		switch outlet.ExecType(t) {
 		case outlet.HttpExec:
 			builder.Add(di.Def{
 				Name: name,
 				Build: func(ctn di.Container) (interface{}, error) {
-					c := ctn.Get(conn).(connector.Connector)
-					if c.Enabled() {
-						return outlet.NewHttpExecutor(c, ctn.Get(tplService).(tpl.TemplateService)), nil
+					connector := ctn.Get(conn).(connector.Connector)
+					var analyser = ctn.Get(analysis.DefaultAnalysisName).(analysis.Analyser)
+					var templater = ctn.Get(tpl.DefaultTemplateServiceName).(tpl.TemplateService)
+					if analy != "" {
+						analyser = ctn.Get(analy).(analysis.Analyser)
+					}
+					if tplService != "" {
+						templater = ctn.Get(tplService).(tpl.TemplateService)
+					}
+
+					if connector.Enabled() {
+						return outlet.NewHttpExecutor(connector,
+							templater,
+							analyser), nil
 					}
 					return nil, errors.New("connector is disabled")
 				},

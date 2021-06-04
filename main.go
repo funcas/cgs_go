@@ -27,7 +27,7 @@ func main() {
 
 	secure, _ := section.Key("secure").Bool()
 	container.Build()
-
+	manager.LoadTransformer()
 	go func() {
 		conf := &thrift.TConfiguration{
 			ConnectTimeout: time.Duration(5000) * time.Millisecond,

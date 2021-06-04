@@ -1,6 +1,10 @@
 package outlet
 
-import "github.com/funcas/cgs/message"
+import (
+	"log"
+
+	"github.com/funcas/cgs/message"
+)
 
 type Dispatch struct {
 	transMap TransCodeMap
@@ -16,7 +20,7 @@ func (d Dispatch) Send(msg *message.Message) {
 	transCode := msg.TransCode
 	outlet, e := d.transMap.GetOutlet(transCode)
 	if e != nil {
-		msg.RetMsg = e.Error()
+		log.Println(e.Error())
 		return
 	}
 	outlet.Executor().Execute(msg)

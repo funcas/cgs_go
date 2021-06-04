@@ -4,14 +4,14 @@
       "name": "demoExecutor",
       "connector": "testConn",
       "analysisService": "",
-      "templateService": "DefaultTemplateService",
+      "templateService": "",
       "type": "HTTP_EXECUTOR"
     },
     {
       "name": "demoExecutor2",
       "connector": "testConn2",
-      "analysisService": "",
-      "templateService": "DefaultTemplateService",
+      "analysisService": "OmniAnalyser",
+      "templateService": "",
       "type": "HTTP_EXECUTOR"
     }
   ],

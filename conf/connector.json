@@ -3,25 +3,27 @@
     {
       "name": "testConn",
       "enabled": true,
-      "url": "https://www.sina.com",
-      "method": "GET",
-      "queryParams": "1",
-      "contentType": "2",
-      "userAgent": "3",
+      "url": "https://dev.ylzpay.com/admin/api/yhadmin/api/yhaf-admin-upms/tbUserWx/listTbUserWxDTO",
+      "method": "POST",
+      "queryParams": "",
+      "contentType": "application/json",
+      "userAgent": "",
       "type": "HTTP_CONNECTOR",
       "timeout": 3,
+      "header": "authorization",
       "lang": "UTF-8"
     },
     {
       "name": "testConn2",
-      "enabled": false,
-      "url": "http://127.0.0.1:8080/test",
-      "method": "POST",
-      "queryParams": "2",
+      "enabled": true,
+      "url": "https://dev.ylzpay.com/admin/api/yhadmin/v1/upms/units?status=1",
+      "method": "GET",
+      "queryParams": "",
       "contentType": "application/json",
-      "userAgent": "3",
+      "userAgent": "",
       "timeout": 3000,
       "type": "HTTP_CONNECTOR",
+      "header": "authorization",
       "lang": "UTF-8"
     }
   ]
