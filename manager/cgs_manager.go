@@ -5,9 +5,11 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/jf-tech/omniparser"
 )
 
-var transformMap = make(map[string]*os.File)
+var transformMap = make(map[string]omniparser.Schema)
 
 const transformDir = "/conf/transform/"
 
@@ -26,10 +28,15 @@ func LoadTransformer() {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-		transformMap[fileName[0]] = schemaFile
+		schema, err := omniparser.NewSchema(fileName[0], schemaFile)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		transformMap[fileName[0]] = schema
 	}
 }
 
-func TransFormMap() map[string]*os.File {
+func TransFormMap() map[string]omniparser.Schema {
 	return transformMap
 }

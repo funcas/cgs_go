@@ -2,6 +2,7 @@ package tpl
 
 import (
 	"log"
+	"strings"
 
 	"github.com/flosch/pongo2/v4"
 	"github.com/funcas/cgs/message"
@@ -37,7 +38,8 @@ func (t DefaultTemplateService) GetTemplateWithParams(transCode string, params m
 	if err != nil {
 		log.Println(err)
 	}
-	return out
+
+	return strings.Replace(out, "\n", "", -1)
 }
 
 func (t DefaultTemplateService) GetTemplateFromMessage(msg message.Message) string {

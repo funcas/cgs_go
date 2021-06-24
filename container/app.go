@@ -82,7 +82,7 @@ func registerConnectors(builder *di.Builder) {
 		case connector.Socket:
 			err = errors.New("not support yet")
 		case connector.WebService:
-			err = errors.New("not support yet")
+			err = builder.Set(name, connector.NewWebserviceConnector(conn))
 		default:
 			err = builder.Set(name, connector.NewHttpConnector(conn))
 		}
@@ -130,7 +130,30 @@ func registerOutlets(builder *di.Builder) {
 					return nil, errors.New("connector is disabled")
 				},
 			})
+		case outlet.WSExec:
+			builder.Add(di.Def{
+				Name: name,
+				Build: func(ctn di.Container) (interface{}, error) {
+					connector := ctn.Get(conn).(connector.Connector)
+					var analyser = ctn.Get(analysis.DefaultAnalysisName).(analysis.Analyser)
+					var templater = ctn.Get(tpl.DefaultTemplateServiceName).(tpl.TemplateService)
+					if analy != "" {
+						analyser = ctn.Get(analy).(analysis.Analyser)
+					}
+					if tplService != "" {
+						templater = ctn.Get(tplService).(tpl.TemplateService)
+					}
+
+					if connector.Enabled() {
+						return outlet.NewWSExecutor(connector,
+							templater,
+							analyser), nil
+					}
+					return nil, errors.New("connector is disabled")
+				},
+			})
 		}
+
 	}
 	transMap := make(outlet.TransCodeMap)
 	for _, out := range outletSet[1] {

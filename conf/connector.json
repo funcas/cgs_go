@@ -25,6 +25,31 @@
       "type": "HTTP_CONNECTOR",
       "header": "authorization",
       "lang": "UTF-8"
+    },
+    {
+      "name": "testConn3",
+      "enabled": true,
+      "url": "https://www.google.com.hk",
+      "method": "GET",
+      "queryParams": "",
+      "contentType": "text/html",
+      "userAgent": "",
+      "timeout": 3,
+      "type": "HTTP_CONNECTOR",
+      "lang": "UTF-8"
+    },
+    {
+      "name": "testConn4",
+      "enabled": true,
+      "wsAddress": "http://www.webxml.com.cn/WebServices/TranslatorWebService.asmx",
+      "namespace": "http://WebXml.com.cn/",
+      "methodName": "getEnCnTwoWayTranslator",
+      "paramNames": "Word",
+      "soapAction": "http://WebXml.com.cn/getEnCnTwoWayTranslator",
+      "methodNamespace": "",
+      "timeout": 3,
+      "type": "WEBSERVICE_CONNECTOR",
+      "proxy": ""
     }
   ]
 }

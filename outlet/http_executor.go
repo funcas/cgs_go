@@ -70,20 +70,25 @@ func (exe HttpExecutor) Execute(msg *message.Message) {
 	}
 
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		msg.OriData = err.Error()
 		log.Println(err.Error())
 		return
 	}
-	if resp.StatusCode != 200 {
-		msg.OriData = "request error"
-		return
-	}
-	defer resp.Body.Close()
+
 	body, _ := ioutil.ReadAll(resp.Body)
 	dst, _ := charset.ToUTF8(charset.Charset(conn.Lang()), string(body))
 	log.Printf("return msg >>> %s <<<", dst)
+
 	msg.OriData = dst
+	if resp.StatusCode != 200 {
+		if dst != "" {
+			msg.Data = dst
+		}
+		log.Println("request error")
+		return
+	}
 	if exe.analysis != nil {
 		msg.Data = exe.analysis.AnalysisResult(dst, msg.TransCode)
 	}

@@ -49,15 +49,10 @@ func (o OmniAnalysis) AnalysisResult(result, transCode string) string {
 }
 
 func getOmniSchema(transCode string) (schema omniparser.Schema, e error) {
-	schemaFile := manager.TransFormMap()[transCode]
-	if schemaFile == nil {
+	schema = manager.TransFormMap()[transCode]
+	if schema == nil {
 		errorMsg := fmt.Sprintf("could not find transform schema file %s.json", transCode)
 		e = errors.New(errorMsg)
-		return
-	}
-	schema, err := omniparser.NewSchema(transCode, schemaFile)
-	if err != nil {
-		e = err
 		return
 	}
 	return

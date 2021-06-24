@@ -3,6 +3,7 @@ package connector
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/valyala/fastjson"
@@ -20,6 +21,7 @@ type HttpConnector struct {
 	timeout     int
 	lang        string
 	header      string
+	proxy       string
 }
 
 func NewHttpConnector(vo *fastjson.Value) *HttpConnector {
@@ -32,6 +34,7 @@ func NewHttpConnector(vo *fastjson.Value) *HttpConnector {
 		timeout:     vo.GetInt("timeout"),
 		lang:        string(vo.GetStringBytes("lang")),
 		header:      string(vo.GetStringBytes("header")),
+		proxy:       string(vo.GetStringBytes("proxy")),
 		BaseConnector: BaseConnector{
 			name:    string(vo.GetStringBytes("name")),
 			enabled: vo.GetBool("enabled"),
@@ -80,8 +83,18 @@ func (h HttpConnector) GetHttpClient() (client *http.Client, err error) {
 		err = errors.New("connector has been disabled")
 		return
 	}
+
 	client = &http.Client{
 		Timeout: time.Duration(h.timeout) * time.Second,
+	}
+	// 若设置了代码地址，则使用代理
+	if h.proxy != "" {
+		proxy := func(_ *http.Request) (*url.URL, error) {
+			return url.Parse(h.proxy)
+		}
+		client.Transport = &http.Transport{
+			Proxy: proxy,
+		}
 	}
 
 	return

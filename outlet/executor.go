@@ -23,4 +23,5 @@ type ExecType string
 
 const (
 	HttpExec ExecType = "HTTP_EXECUTOR"
+	WSExec   ExecType = "WS_EXECUTOR"
 )

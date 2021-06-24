@@ -8,25 +8,20 @@ import (
 )
 
 func TestAnalysisResult(t *testing.T) {
-	input := `{
-    "order_id": "1234567",
-    "tracking_number": "1z9999999999999999",
-    "items": [
-        {
-            "item_sku": "ab123",
-            "item_price": 12.34,
-            "number_purchased": 5
-        },
-        {
-            "item_sku": "ck763-23",
-            "item_price": 3.12,
-            "number_purchased": 2
-        }
-    ]
-}
+	input := `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <soap:Body>
+      <getEnCnTwoWayTranslatorResponse xmlns="http://WebXml.com.cn/">
+         <getEnCnTwoWayTranslatorResult>
+            <string>misty: [ 'misti ]</string>
+            <string>a. 有雾的,模糊的,含糊的 | 
+词形变化:副词:mistily 形容词比较级:mistier 最高级:mistiest 名词:mistiness  |</string>
+         </getEnCnTwoWayTranslatorResult>
+      </getEnCnTwoWayTranslatorResponse>
+   </soap:Body>
+</soap:Envelope>
 `
 	manager.LoadTransformer()
 	ana := NewOmniAnalysis()
-	ret := ana.AnalysisResult(input, "sample")
+	ret := ana.AnalysisResult(input, "test4")
 	fmt.Println(ret)
 }

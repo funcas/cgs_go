@@ -13,6 +13,20 @@
       "analysisService": "OmniAnalyser",
       "templateService": "",
       "type": "HTTP_EXECUTOR"
+    },
+    {
+      "name": "demoExecutor3",
+      "connector": "testConn3",
+      "analysisService": "",
+      "templateService": "",
+      "type": "HTTP_EXECUTOR"
+    },
+    {
+      "name": "demoExecutor4",
+      "connector": "testConn4",
+      "analysisService": "OmniAnalyser",
+      "templateService": "",
+      "type": "WS_EXECUTOR"
     }
   ],
 
@@ -29,6 +43,20 @@
       "executor": "demoExecutor2",
       "acceptTransCodes": [
         "test2"
+      ]
+    },
+    {
+      "name": "demoPort3",
+      "executor": "demoExecutor3",
+      "acceptTransCodes": [
+        "test3"
+      ]
+    },
+    {
+      "name": "demoPort4",
+      "executor": "demoExecutor4",
+      "acceptTransCodes": [
+        "test4"
       ]
     }
   ]
