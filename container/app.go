@@ -5,6 +5,12 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/funcas/cgs/analysis"
+
+	"github.com/funcas/cgs/manager"
+
+	"github.com/funcas/cgs/tpl"
+
 	"github.com/funcas/cgs/outlet"
 
 	"github.com/funcas/cgs/connector"
@@ -14,25 +20,31 @@ import (
 	"github.com/sarulabs/di/v2"
 )
 
-var app di.Container
-
-func App() di.Container {
-	return app
-}
+const (
+	OutletName    = "outlets"
+	DispatchName  = "dispatch"
+	TemplateDir   = "./conf/template"
+	ConnectorConf = "./conf/connector.json"
+)
 
 func Build() {
 	builder, err := di.NewBuilder()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	// register connectors to di container
 	registerConnectors(builder)
+	// register templateService to di container
+	registerTmplService(builder)
+	// register analysisService to di container
+	registerAnalysisService(builder)
+	// register outlets to di container
 	registerOutlets(builder)
-	app = builder.Build()
 
-}
+	registerDispatch(builder)
 
-func Destroy() {
-	app.Delete()
+	manager.InitDiFactory(builder.Build())
+
 }
 
 func readConfig(path string, keys ...string) [][]*fastjson.Value {
@@ -52,12 +64,13 @@ func readConfig(path string, keys ...string) [][]*fastjson.Value {
 	return res
 }
 
-//
-//func readOutletConf()
+func registerTmplService(builder *di.Builder) {
+	builder.Set(tpl.DefaultTemplateServiceName, tpl.NewDefaultTemplateService(TemplateDir))
+}
 
 // register connector instances to di container
 func registerConnectors(builder *di.Builder) {
-	connList := readConfig("./conf/connector.json", "connectors")
+	connList := readConfig(ConnectorConf, "connectors")
 	for _, conn := range connList[0] {
 		var err error
 		t := string(conn.GetStringBytes("type"))
@@ -69,7 +82,7 @@ func registerConnectors(builder *di.Builder) {
 		case connector.Socket:
 			err = errors.New("not support yet")
 		case connector.WebService:
-			err = errors.New("not support yet")
+			err = builder.Set(name, connector.NewWebserviceConnector(conn))
 		default:
 			err = builder.Set(name, connector.NewHttpConnector(conn))
 		}
@@ -80,25 +93,71 @@ func registerConnectors(builder *di.Builder) {
 	}
 }
 
+//
+func registerAnalysisService(builder *di.Builder) {
+	builder.Set(analysis.OmniAnalysisName, analysis.NewOmniAnalysis())
+	builder.Set(analysis.DefaultAnalysisName, analysis.NewDefaultAnalysis())
+}
+
 func registerOutlets(builder *di.Builder) {
 	outletSet := readConfig("./conf/outlet.json", "executors", "outlets")
 	for _, exe := range outletSet[0] {
 		t := string(exe.GetStringBytes("type"))
 		name := string(exe.GetStringBytes("name"))
 		conn := string(exe.GetStringBytes("connector"))
+		analy := string(exe.GetStringBytes("analysisService"))
+		tplService := string(exe.GetStringBytes("templateService"))
 		switch outlet.ExecType(t) {
 		case outlet.HttpExec:
 			builder.Add(di.Def{
 				Name: name,
 				Build: func(ctn di.Container) (interface{}, error) {
-					return outlet.NewHttpExecutor(ctn.Get(conn).(connector.Connector)), nil
+					connector := ctn.Get(conn).(connector.Connector)
+					var analyser = ctn.Get(analysis.DefaultAnalysisName).(analysis.Analyser)
+					var templater = ctn.Get(tpl.DefaultTemplateServiceName).(tpl.TemplateService)
+					if analy != "" {
+						analyser = ctn.Get(analy).(analysis.Analyser)
+					}
+					if tplService != "" {
+						templater = ctn.Get(tplService).(tpl.TemplateService)
+					}
+
+					if connector.Enabled() {
+						return outlet.NewHttpExecutor(connector,
+							templater,
+							analyser), nil
+					}
+					return nil, errors.New("connector is disabled")
+				},
+			})
+		case outlet.WSExec:
+			builder.Add(di.Def{
+				Name: name,
+				Build: func(ctn di.Container) (interface{}, error) {
+					connector := ctn.Get(conn).(connector.Connector)
+					var analyser = ctn.Get(analysis.DefaultAnalysisName).(analysis.Analyser)
+					var templater = ctn.Get(tpl.DefaultTemplateServiceName).(tpl.TemplateService)
+					if analy != "" {
+						analyser = ctn.Get(analy).(analysis.Analyser)
+					}
+					if tplService != "" {
+						templater = ctn.Get(tplService).(tpl.TemplateService)
+					}
+
+					if connector.Enabled() {
+						return outlet.NewWSExecutor(connector,
+							templater,
+							analyser), nil
+					}
+					return nil, errors.New("connector is disabled")
 				},
 			})
 		}
+
 	}
-	transMap := make(TransCodeMap)
+	transMap := make(outlet.TransCodeMap)
 	for _, out := range outletSet[1] {
-		acceptTransCodes := []string{}
+		var acceptTransCodes []string
 		name := string(out.GetStringBytes("name"))
 		exec := string(out.GetStringBytes("executor"))
 		transCodeArr := out.GetArray("acceptTransCodes")
@@ -115,28 +174,16 @@ func registerOutlets(builder *di.Builder) {
 		})
 	}
 	if len(transMap) > 0 {
-		builder.Set(OUTLET_NAME, transMap)
+		builder.Set(OutletName, transMap)
 	}
 
 }
 
-const OUTLET_NAME = "outlets"
-
-type TransCodeMap map[string]string
-
-func (t TransCodeMap) Exists(transCode string) bool {
-	_, exists := t[transCode]
-	return exists
-}
-
-func (t TransCodeMap) GetOutlet(transCode string) (*outlet.Outlet, error) {
-	if !t.Exists(transCode) {
-		return nil, errors.New("invalid transCode")
-	}
-
-	res, err := app.SafeGet(t[transCode])
-	if err != nil {
-		return nil, err
-	}
-	return res.(*outlet.Outlet), nil
+func registerDispatch(builder *di.Builder) {
+	builder.Add(di.Def{
+		Name: DispatchName,
+		Build: func(ctn di.Container) (interface{}, error) {
+			return outlet.NewDispatch(ctn.Get(OutletName).(outlet.TransCodeMap)), nil
+		},
+	})
 }

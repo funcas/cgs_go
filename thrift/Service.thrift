@@ -10,6 +10,7 @@ struct Resp {
     2: string data;   // 无解析，返回原始报文
     3: data uniData;  // 解析过的非数据集数据
     4: map<string,cudData> cudData; //解析出来的数据集数据, key为关联键
+    5: string errorMsg;
 }
 
 

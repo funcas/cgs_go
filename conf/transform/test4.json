@@ -1,0 +1,33 @@
+{
+  "parser_settings": {
+    "version": "omni.2.1",
+    "file_format_type": "xml"
+  },
+  "transform_declarations": {
+    "FINAL_OUTPUT": { "xpath": "soap:Envelope/soap:Body/getEnCnTwoWayTranslatorResponse/getEnCnTwoWayTranslatorResult", "object": {
+      "ret": {"array": [ { "xpath": "string" } ]}
+    }
+
+    },
+    "footer_template1": { "xpath": "footer" },
+    "book_template": { "keep_empty_or_null": true, "object": {
+      "planet": { "const": "earth" },
+      "author": { "xpath": "author" },
+      "year": { "type": "int", "xpath": "year" },
+      "price": { "type": "float", "xpath": "@price" },
+      "title": { "xpath": "@title" },
+      "custom_func_demo": { "keep_empty_or_null": true, "custom_func": {
+        "name": "concat",
+        "args": [
+          { "xpath": "author" },
+          { "custom_func": { "name": "concat", "args": [ { "const": "<" }, { "const": ">" } ] } },
+          { "xpath": "@title" },
+          { "const": "-" },
+          { "xpath": "../header/publisher" }
+        ]
+      }},
+      "footer": { "template": "footer_template2" }
+    }},
+    "footer_template2": { "xpath": "../footer" }
+  }
+}

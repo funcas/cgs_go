@@ -3,26 +3,53 @@
     {
       "name": "testConn",
       "enabled": true,
-      "url": "https://www.sina.com",
-      "method": "GET",
-      "queryParams": "1",
-      "contentType": "2",
-      "userAgent": "3",
+      "url": "https://dev.ylzpay.com/admin/api/yhadmin/api/yhaf-admin-upms/tbUserWx/listTbUserWxDTO",
+      "method": "POST",
+      "queryParams": "",
+      "contentType": "application/json",
+      "userAgent": "",
       "type": "HTTP_CONNECTOR",
       "timeout": 3,
+      "header": "authorization",
       "lang": "UTF-8"
     },
     {
       "name": "testConn2",
       "enabled": true,
-      "url": "https://www.qq.com",
+      "url": "https://dev.ylzpay.com/admin/api/yhadmin/v1/upms/units?status=1",
       "method": "GET",
-      "queryParams": "2",
-      "contentType": "2",
-      "userAgent": "3",
+      "queryParams": "",
+      "contentType": "application/json",
+      "userAgent": "",
       "timeout": 3000,
       "type": "HTTP_CONNECTOR",
-      "lang": "GBK"
+      "header": "authorization",
+      "lang": "UTF-8"
+    },
+    {
+      "name": "testConn3",
+      "enabled": true,
+      "url": "https://www.google.com.hk",
+      "method": "GET",
+      "queryParams": "",
+      "contentType": "text/html",
+      "userAgent": "",
+      "timeout": 3,
+      "type": "HTTP_CONNECTOR",
+      "lang": "UTF-8"
+    },
+    {
+      "name": "testConn4",
+      "enabled": true,
+      "wsAddress": "http://www.webxml.com.cn/WebServices/TranslatorWebService.asmx",
+      "namespace": "http://WebXml.com.cn/",
+      "methodName": "getEnCnTwoWayTranslator",
+      "paramNames": "Word",
+      "soapAction": "http://WebXml.com.cn/getEnCnTwoWayTranslator",
+      "methodNamespace": "",
+      "timeout": 3,
+      "type": "WEBSERVICE_CONNECTOR",
+      "proxy": ""
     }
   ]
 }

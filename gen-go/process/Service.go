@@ -30,11 +30,13 @@ func CudDataPtr(v CudData) *CudData { return &v }
 //  - Data
 //  - UniData
 //  - CudData
+//  - ErrorMsg
 type Resp struct {
 	TransCode string             `thrift:"transCode,1" db:"transCode" json:"transCode"`
 	Data      string             `thrift:"data,2" db:"data" json:"data"`
 	UniData   Data               `thrift:"uniData,3" db:"uniData" json:"uniData"`
 	CudData   map[string]CudData `thrift:"cudData,4" db:"cudData" json:"cudData"`
+	ErrorMsg  string             `thrift:"errorMsg,5" db:"errorMsg" json:"errorMsg"`
 }
 
 func NewResp() *Resp {
@@ -55,6 +57,10 @@ func (p *Resp) GetUniData() Data {
 
 func (p *Resp) GetCudData() map[string]CudData {
 	return p.CudData
+}
+
+func (p *Resp) GetErrorMsg() string {
+	return p.ErrorMsg
 }
 func (p *Resp) Read(ctx context.Context, iprot thrift.TProtocol) error {
 	if _, err := iprot.ReadStructBegin(ctx); err != nil {
@@ -103,6 +109,16 @@ func (p *Resp) Read(ctx context.Context, iprot thrift.TProtocol) error {
 		case 4:
 			if fieldTypeId == thrift.MAP {
 				if err := p.ReadField4(ctx, iprot); err != nil {
+					return err
+				}
+			} else {
+				if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+					return err
+				}
+			}
+		case 5:
+			if fieldTypeId == thrift.STRING {
+				if err := p.ReadField5(ctx, iprot); err != nil {
 					return err
 				}
 			} else {
@@ -229,6 +245,15 @@ func (p *Resp) ReadField4(ctx context.Context, iprot thrift.TProtocol) error {
 	return nil
 }
 
+func (p *Resp) ReadField5(ctx context.Context, iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(ctx); err != nil {
+		return thrift.PrependError("error reading field 5: ", err)
+	} else {
+		p.ErrorMsg = v
+	}
+	return nil
+}
+
 func (p *Resp) Write(ctx context.Context, oprot thrift.TProtocol) error {
 	if err := oprot.WriteStructBegin(ctx, "Resp"); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
@@ -244,6 +269,9 @@ func (p *Resp) Write(ctx context.Context, oprot thrift.TProtocol) error {
 			return err
 		}
 		if err := p.writeField4(ctx, oprot); err != nil {
+			return err
+		}
+		if err := p.writeField5(ctx, oprot); err != nil {
 			return err
 		}
 	}
@@ -349,6 +377,19 @@ func (p *Resp) writeField4(ctx context.Context, oprot thrift.TProtocol) (err err
 	return err
 }
 
+func (p *Resp) writeField5(ctx context.Context, oprot thrift.TProtocol) (err error) {
+	if err := oprot.WriteFieldBegin(ctx, "errorMsg", thrift.STRING, 5); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:errorMsg: ", p), err)
+	}
+	if err := oprot.WriteString(ctx, string(p.ErrorMsg)); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T.errorMsg (5) field write error: ", p), err)
+	}
+	if err := oprot.WriteFieldEnd(ctx); err != nil {
+		return thrift.PrependError(fmt.Sprintf("%T write field end error 5:errorMsg: ", p), err)
+	}
+	return err
+}
+
 func (p *Resp) Equals(other *Resp) bool {
 	if p == other {
 		return true
@@ -390,6 +431,9 @@ func (p *Resp) Equals(other *Resp) bool {
 				}
 			}
 		}
+	}
+	if p.ErrorMsg != other.ErrorMsg {
+		return false
 	}
 	return true
 }

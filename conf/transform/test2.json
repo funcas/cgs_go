@@ -1,0 +1,18 @@
+{
+  "parser_settings": {
+    "version": "omni.2.1",
+    "file_format_type": "json"
+  },
+  "transform_declarations": {
+    "FINAL_OUTPUT": { "object": {
+      "content":{ "array": [ { "xpath": "param/*" , "object":{
+
+        "name":{ "xpath": "name" },
+        "unitId":{"xpath":"id"}
+
+
+      }} ] }
+
+    }}
+  }
+}
